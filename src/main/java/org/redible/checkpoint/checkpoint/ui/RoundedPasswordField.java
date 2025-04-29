@@ -3,7 +3,6 @@ package org.redible.checkpoint.checkpoint.ui;
 import javax.swing.*;
 import java.awt.*;
 
-// Lekerekített JPasswordField osztály
 class RoundedPasswordField extends JPasswordField {
     public RoundedPasswordField(int size) {
         super(size);

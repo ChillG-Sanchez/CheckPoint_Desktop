@@ -3,7 +3,6 @@ package org.redible.checkpoint.checkpoint.ui;
 import javax.swing.*;
 import java.awt.*;
 
-// Lekerekített JTextField osztály
 class RoundedTextField extends JTextField {
     public RoundedTextField(int size) {
         super(size);

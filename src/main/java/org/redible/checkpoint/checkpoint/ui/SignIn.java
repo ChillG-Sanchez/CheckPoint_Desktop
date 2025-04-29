@@ -3,9 +3,6 @@ package org.redible.checkpoint.checkpoint.ui;
 import com.formdev.flatlaf.FlatLightLaf;
 import org.redible.checkpoint.checkpoint.auth.AuthService;
 import org.redible.checkpoint.checkpoint.ui.PageByRole.Roles.AdminPage;
-import org.redible.checkpoint.checkpoint.ui.PageByRole.Roles.PortaPage;
-import org.redible.checkpoint.checkpoint.ui.PageByRole.Roles.StudentPage;
-import org.redible.checkpoint.checkpoint.ui.PageByRole.Roles.TeacherPage;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -17,13 +14,13 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 
+@SuppressWarnings("ALL")
 public class SignIn extends JFrame {
 
     public SignIn() {
         super("Sign In");
         System.setProperty("apple.awt.application.name", "CheckPoint");
 
-        // Set FlatLaf look and feel
         try {
             UIManager.setLookAndFeel(new FlatLightLaf());
         } catch (UnsupportedLookAndFeelException e) {
@@ -34,18 +31,13 @@ public class SignIn extends JFrame {
         setExtendedState(JFrame.MAXIMIZED_BOTH);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-        // Load background image
         BufferedImage bgImage = null;
         try {
-            bgImage = ImageIO.read(new File("/Users/csillagcsaba/Desktop/Petrikes/CheckPoint/src/IT-infrastructure-security.jpg"));
-            if (bgImage == null) {
-                System.err.println("Image not found or could not be loaded.");
-            }
+            bgImage = ImageIO.read(new File("C:/Users/ChillG/Desktop/Vizsgamunka/src/IT-infrastructure-security.jpg"));
         } catch (IOException e) {
             e.printStackTrace();
         }
 
-        // Custom panel with background image
         BufferedImage finalBgImage = bgImage;
         JPanel backgroundPanel = new JPanel() {
             @Override
@@ -59,13 +51,11 @@ public class SignIn extends JFrame {
         backgroundPanel.setLayout(new BorderLayout());
         add(backgroundPanel);
 
-        // Panel for login inputs (right side)
         JPanel loginWrapper = new JPanel(new GridBagLayout());
         loginWrapper.setOpaque(false);
         loginWrapper.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 50));
         backgroundPanel.add(loginWrapper, BorderLayout.EAST);
 
-        // Login panel (semi-transparent background)
         JPanel loginPanel = new JPanel(new GridBagLayout()) {
             @Override
             protected void paintComponent(Graphics g) {
@@ -113,19 +103,35 @@ public class SignIn extends JFrame {
         gbc.gridy = 3;
         loginPanel.add(passwordText, gbc);
 
-        JButton loginButton = new JButton("Login");
+        JButton loginButton = new JButton("Login") {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2 = (Graphics2D) g;
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(getBackground());
+                g2.fill(new RoundRectangle2D.Double(0, 0, getWidth(), getHeight(), 20, 20));
+                super.paintComponent(g);
+            }
+
+            @Override
+            protected void paintBorder(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g;
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(Color.GRAY);
+                g2.draw(new RoundRectangle2D.Double(0, 0, getWidth() - 1, getHeight() - 1, 20, 20));
+            }
+        };
         loginButton.setFont(new Font("Arial", Font.BOLD, 18));
         loginButton.setPreferredSize(new Dimension(300, 50));
         loginButton.setBackground(new Color(70, 130, 180));
         loginButton.setForeground(Color.WHITE);
-        loginButton.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         loginButton.setFocusPainted(false);
         loginButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
         gbc.gridy = 4;
         loginPanel.add(loginButton, gbc);
 
-        // Hover effect
         loginButton.addMouseListener(new MouseAdapter() {
             public void mouseEntered(MouseEvent evt) {
                 loginButton.setBackground(new Color(30, 100, 180));
@@ -136,37 +142,20 @@ public class SignIn extends JFrame {
             }
         });
 
-        // Login button action
         loginButton.addActionListener(e -> {
             String email = userText.getText();
             String password = new String(passwordText.getPassword());
 
             try {
-                String role = AuthService.authenticateUser(email, password);
-                if (role != null) {
-                    switch (role) {
-                        case "admin":
-                            new AdminPage().setVisible(true);
-                            break;
-                        case "teacher":
-                            new TeacherPage().setVisible(true);
-                            break;
-                        case "student":
-                            new StudentPage().setVisible(true);
-                        case "porta":
-                            new PortaPage().setVisible(true);
-                            break;
-                        default:
-                            new HomePage().setVisible(true);
-                            break;
-                    }
-                    dispose();
-                } else {
-                    JOptionPane.showMessageDialog(null, "Invalid email or password!", "Error", JOptionPane.ERROR_MESSAGE);
-                }
+                AuthService authService = new AuthService();
+                authService.authenticateUser(email, password);
+                String accessToken = authService.getAccessToken();
+
+                new AdminPage(accessToken).setVisible(true);
+                dispose();
             } catch (Exception ex) {
                 ex.printStackTrace();
-                JOptionPane.showMessageDialog(null, "An error occurred during login!", "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(null, "Hiba történt a bejelentkezés során!", "Hiba", JOptionPane.ERROR_MESSAGE);
             }
         });
     }

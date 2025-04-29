@@ -10,6 +10,8 @@ module org.redible.checkpoint.checkpoint {
     requires com.formdev.flatlaf;
     requires java.desktop;
     requires org.json;
+    requires batik.all;
+    requires okhttp3;
 
     opens org.redible.checkpoint.checkpoint to javafx.fxml;
     exports org.redible.checkpoint.checkpoint;

@@ -1,17 +1,18 @@
 package org.redible.checkpoint.checkpoint.ui.PageByRole.Roles;
 
 import javax.swing.*;
+import java.awt.*;
 
 public class TeacherPage extends JFrame {
-
     public TeacherPage() {
         setTitle("Teacher Page");
-        setSize(800, 600);
-        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        setLocationRelativeTo(null);
+        setExtendedState(JFrame.MAXIMIZED_BOTH);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-        JLabel label = new JLabel("Welcome to the Teacher Page!");
-        label.setHorizontalAlignment(SwingConstants.CENTER);
+        JLabel label = new JLabel("Welcome, Teacher!", SwingConstants.CENTER);
+        label.setFont(new Font("Arial", Font.BOLD, 24));
         add(label);
+
+        setVisible(true);
     }
 }
