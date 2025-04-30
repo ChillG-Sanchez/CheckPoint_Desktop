@@ -43,4 +43,19 @@ public class NavigationUI {
             throw new IllegalArgumentException("Ikon betöltése sikertelen: " + iconPath, e);
         }
     }
+
+    public static JPanel createPortaSidebar(ActionListener onProfile, ActionListener onEvents, ActionListener onScan, ActionListener onLogout) {
+        JPanel navPanel = new JPanel();
+        navPanel.setLayout(new BoxLayout(navPanel, BoxLayout.Y_AXIS));
+        navPanel.setBackground(new Color(70, 130, 180));
+        navPanel.setPreferredSize(new Dimension(200, 1000));
+
+        addStyledNavButton(navPanel, "Profil", "/icons/profile-svgrepo-com.svg", onProfile);
+        addStyledNavButton(navPanel, "Események", "/icons/list-svgrepo-com.svg", onEvents);
+        addStyledNavButton(navPanel, "Kártyabeolvasás", "/icons/barcode-svgrepo-com.svg", onScan);
+        addStyledNavButton(navPanel, "Kilépés", "/icons/logout-multimedia-ui-svgrepo-com.svg", onLogout);
+
+        return navPanel;
+    }
+
 }
