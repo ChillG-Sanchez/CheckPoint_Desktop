@@ -4,6 +4,8 @@ import org.apache.batik.transcoder.TranscoderInput;
 import org.apache.batik.transcoder.TranscoderOutput;
 import org.apache.batik.transcoder.image.PNGTranscoder;
 
+import org.redible.checkpoint.checkpoint.util.ProfileUtil;
+
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -20,6 +22,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import okhttp3.*;
 import org.redible.checkpoint.checkpoint.util.ApiUtil;
+import org.redible.checkpoint.checkpoint.util.SearchUtil;
 
 public class AdminPage extends JFrame {
 
@@ -117,133 +120,16 @@ public class AdminPage extends JFrame {
     }
 
     private void showProfile() {
-        System.out.println("showProfile: Kezdődik a profil adatok betöltése.");
         contentPanel.removeAll();
-        JLabel titleLabel = new JLabel("Profil adatok");
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 18));
-        titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        contentPanel.add(titleLabel, BorderLayout.NORTH);
-
-        JPanel formPanel = new JPanel();
-        formPanel.setLayout(new GridLayout(0, 2, 10, 10));
-        formPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
-
-        JTextField nameField = new JTextField();
-        JTextField emailField = new JTextField();
-        JTextField roleField = new JTextField();
-        nameField.setEditable(false);
-        emailField.setEditable(false);
-        roleField.setEditable(false);
-
-        formPanel.add(new JLabel("Név:"));
-        formPanel.add(nameField);
-        formPanel.add(new JLabel("E-mail:"));
-        formPanel.add(emailField);
-        formPanel.add(new JLabel("Szerepkör:"));
-        formPanel.add(roleField);
-
-        JButton editButton = new JButton("Szerkesztés");
-        editButton.setFont(new Font("Arial", Font.BOLD, 16));
-        editButton.setBackground(new Color(70, 130, 180));
-        editButton.setForeground(Color.WHITE);
-        editButton.setFocusPainted(false);
-
-        contentPanel.add(formPanel, BorderLayout.CENTER);
-        contentPanel.add(editButton, BorderLayout.SOUTH);
-
-        new Thread(() -> {
-            try {
-                String userId = extractUserIdFromToken(accessToken);
-                String response = makeApiCall("http://localhost:3000/users/" + userId, "GET", null);
-
-                SwingUtilities.invokeLater(() -> {
-                    try {
-                        org.json.JSONObject jsonResponse = new org.json.JSONObject(response);
-                        nameField.setText(jsonResponse.getString("name"));
-                        emailField.setText(jsonResponse.getString("email"));
-                        roleField.setText(jsonResponse.getString("role"));
-                    } catch (Exception e) {
-                        JOptionPane.showMessageDialog(this, "Hiba történt az adatok feldolgozása során!", "Hiba", JOptionPane.ERROR_MESSAGE);
-                    }
-                });
-            } catch (Exception e) {
-                SwingUtilities.invokeLater(() -> {
-                    JOptionPane.showMessageDialog(this, "Hiba történt az adatok lekérése során!", "Hiba", JOptionPane.ERROR_MESSAGE);
-                });
-            }
-        }).start();
-
-        editButton.addActionListener(e -> showEditProfile(nameField.getText(), emailField.getText()));
+        JPanel profilePanel = ProfileUtil.buildProfilePanel(accessToken);
+        contentPanel.add(profilePanel, BorderLayout.CENTER);
         contentPanel.revalidate();
         contentPanel.repaint();
     }
 
+
     private void showEditProfile(String currentName, String currentEmail) {
-        contentPanel.removeAll();
-        JLabel titleLabel = new JLabel("Profil szerkesztése");
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 18));
-        titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        contentPanel.add(titleLabel, BorderLayout.NORTH);
-
-        JPanel formPanel = new JPanel();
-        formPanel.setLayout(new GridLayout(0, 2, 10, 10));
-        formPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
-
-        JTextField nameField = new JTextField(currentName);
-        JTextField emailField = new JTextField(currentEmail);
-        JPasswordField passwordField = new JPasswordField();
-
-        formPanel.add(new JLabel("Név:"));
-        formPanel.add(nameField);
-        formPanel.add(new JLabel("E-mail:"));
-        formPanel.add(emailField);
-        formPanel.add(new JLabel("Új jelszó:"));
-        formPanel.add(passwordField);
-
-        JButton saveButton = new JButton("Mentés");
-        saveButton.setFont(new Font("Arial", Font.BOLD, 16));
-        saveButton.setBackground(new Color(70, 130, 180));
-        saveButton.setForeground(Color.WHITE);
-        saveButton.setFocusPainted(false);
-
-        contentPanel.add(formPanel, BorderLayout.CENTER);
-        contentPanel.add(saveButton, BorderLayout.SOUTH);
-
-        saveButton.addActionListener(e -> {
-            new Thread(() -> {
-                try {
-                    String userId = extractUserIdFromToken(accessToken);
-                    org.json.JSONObject updateData = new org.json.JSONObject();
-                    updateData.put("name", nameField.getText());
-                    updateData.put("email", emailField.getText());
-                    String newPassword = new String(passwordField.getPassword());
-                    if (!newPassword.isEmpty()) {
-                        updateData.put("password", newPassword);
-                    }
-
-                    System.out.println("PATCH kérés küldése: " + updateData.toString());
-                    String response = makeApiCall("http://localhost:3000/users/" + userId, "PATCH", updateData.toString());
-
-                    SwingUtilities.invokeLater(() -> {
-                        try {
-                            org.json.JSONObject jsonResponse = new org.json.JSONObject(response);
-                            JOptionPane.showMessageDialog(this, "Adatok sikeresen frissítve!", "Siker", JOptionPane.INFORMATION_MESSAGE);
-                            showProfile();
-                        } catch (Exception ex) {
-                            JOptionPane.showMessageDialog(this, "Hiba történt a válasz feldolgozása során!", "Hiba", JOptionPane.ERROR_MESSAGE);
-                        }
-                    });
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                    SwingUtilities.invokeLater(() -> {
-                        JOptionPane.showMessageDialog(this, "Hiba történt az adatok frissítése során!", "Hiba", JOptionPane.ERROR_MESSAGE);
-                    });
-                }
-            }).start();
-        });
-
-        contentPanel.revalidate();
-        contentPanel.repaint();
+        ProfileUtil.showEditProfilePanel(currentName, currentEmail, accessToken, contentPanel);
     }
 
     private String extractUserIdFromToken(String token) {
@@ -251,94 +137,7 @@ public class AdminPage extends JFrame {
     }
 
     private void showSearch() {
-        contentPanel.removeAll();
-        JLabel titleLabel = new JLabel("Felhasználók keresése");
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 18));
-        titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        contentPanel.add(titleLabel, BorderLayout.NORTH);
-
-        JPanel searchPanel = new JPanel();
-        searchPanel.setLayout(new BorderLayout());
-        JTextField searchField = new JTextField();
-        searchPanel.add(searchField, BorderLayout.CENTER);
-
-        JTable resultsTable = new JTable();
-        JScrollPane scrollPane = new JScrollPane(resultsTable);
-
-        List<org.json.JSONObject> allUsers = new ArrayList<>();
-        SwingUtilities.invokeLater(() -> {
-            try {
-                String response = makeApiCall("http://localhost:3000/users", "GET", null);
-                org.json.JSONArray jsonArray = new org.json.JSONArray(response);
-                for (int i = 0; i < jsonArray.length(); i++) {
-                    allUsers.add(jsonArray.getJSONObject(i));
-                }
-                updateTable(allUsers, resultsTable, "");
-            } catch (Exception ex) {
-                System.err.println("showSearch: Hiba történt az alapértelmezett lista betöltése során: " + ex.getMessage());
-            }
-        });
-
-        searchField.getDocument().addDocumentListener(new DocumentListener() {
-            private void filterTable() {
-                String query = searchField.getText().toLowerCase();
-                updateTable(allUsers, resultsTable, query);
-            }
-
-            @Override
-            public void insertUpdate(DocumentEvent e) {
-                filterTable();
-            }
-
-            @Override
-            public void removeUpdate(DocumentEvent e) {
-                filterTable();
-            }
-
-            @Override
-            public void changedUpdate(DocumentEvent e) {
-                filterTable();
-            }
-        });
-
-        contentPanel.add(searchPanel, BorderLayout.NORTH);
-        contentPanel.add(scrollPane, BorderLayout.CENTER);
-        contentPanel.revalidate();
-        contentPanel.repaint();
-    }
-
-    private void updateTable(List<org.json.JSONObject> users, JTable table, String query) {
-        String[][] data = users.stream()
-                .filter(user -> {
-                    String name = getNameFromUser(user).toLowerCase();
-                    String email = user.optString("email", "").toLowerCase();
-                    String role = user.optString("role", "").toLowerCase();
-                    return name.startsWith(query) || email.startsWith(query) || role.startsWith(query);
-                })
-                .map(user -> new String[]{
-                        String.valueOf(user.getInt("id")),
-                        getNameFromUser(user),
-                        user.optString("email", "N/A"),
-                        user.optString("role", "N/A")
-                })
-                .toArray(String[][]::new);
-
-        String[] columns = {"ID", "Név", "E-mail", "Szerepkör"};
-        table.setModel(new DefaultTableModel(data, columns));
-    }
-
-
-    private String getNameFromUser(org.json.JSONObject user) {
-        if (user.optJSONObject("admin") != null) {
-            return user.optJSONObject("admin").optString("name", "N/A");
-        } else if (user.optJSONObject("teacher") != null) {
-            return user.optJSONObject("teacher").optString("name", "N/A");
-        } else if (user.optJSONObject("student") != null) {
-            return user.optJSONObject("student").optString("name", "N/A");
-        } else if (user.optJSONObject("porta") != null) {
-            return user.optJSONObject("porta").optString("name", "N/A");
-        }
-        return "N/A";
+        SearchUtil.showSearch(contentPanel, accessToken);
     }
 
     private void showUsersManagement() {
