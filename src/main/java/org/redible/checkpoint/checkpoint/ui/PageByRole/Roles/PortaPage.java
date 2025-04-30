@@ -3,15 +3,17 @@ package org.redible.checkpoint.checkpoint.ui.PageByRole.Roles;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.redible.checkpoint.checkpoint.util.ApiUtil;
+import org.redible.checkpoint.checkpoint.util.ProfileUtil;
+import org.redible.checkpoint.checkpoint.util.EventsUtil;
+import org.redible.checkpoint.checkpoint.ui.NavigationUI;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionListener;
 
+@SuppressWarnings("ALL")
 public class PortaPage extends JFrame {
     private final String accessToken;
-    private final JPanel navigationPanel;
-    private final JPanel contentPanel;
+    private final JPanel contentPanel = new JPanel();
 
     public PortaPage(String accessToken) {
         this.accessToken = accessToken;
@@ -21,61 +23,23 @@ public class PortaPage extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
 
-        navigationPanel = new JPanel();
+        JPanel navigationPanel = new JPanel();
         navigationPanel.setLayout(new BoxLayout(navigationPanel, BoxLayout.Y_AXIS));
         navigationPanel.setBackground(new Color(70, 130, 180));
         navigationPanel.setPreferredSize(new Dimension(200, getHeight()));
 
-        addNavButton("Profil", "C:/Users/ChillG/Desktop/Vizsgamunka/CheckPoint_Desktop/src/main/resources/icons/profile-svgrepo-com.svg", e -> showProfile());
-        addNavButton("Események", "C:/Users/ChillG/Desktop/Vizsgamunka/CheckPoint_Desktop/src/main/resources/icons/list-svgrepo-com.svg", e -> showEvents());
-        addNavButton("Kártyabeolvasás", "C:/Users/ChillG/Desktop/Vizsgamunka/CheckPoint_Desktop/src/main/resources/icons/barcode-svgrepo-com.svg", e -> showScanPanel());
-        addNavButton("Kilépés", "C:/Users/ChillG/Desktop/Vizsgamunka/CheckPoint_Desktop/src/main/resources/icons/logout-multimedia-ui-svgrepo-com.svg", e -> logout());
+        NavigationUI.addStyledNavButton(navigationPanel, "Profil", "/icons/profile-svgrepo-com.svg", e -> showProfile());
+        NavigationUI.addStyledNavButton(navigationPanel, "Események", "/icons/list-svgrepo-com.svg", e -> showEvents());
+        NavigationUI.addStyledNavButton(navigationPanel, "Kártyabeolvasás", "/icons/barcode-svgrepo-com.svg", e -> showScanPanel());
+        NavigationUI.addStyledNavButton(navigationPanel, "Kilépés", "/icons/logout-multimedia-ui-svgrepo-com.svg", e -> logout());
 
         add(navigationPanel, BorderLayout.WEST);
 
-        contentPanel = new JPanel();
         contentPanel.setLayout(new BorderLayout());
         contentPanel.setBackground(Color.WHITE);
         add(contentPanel, BorderLayout.CENTER);
 
         setVisible(true);
-    }
-
-    private void addNavButton(String text, String iconPath, ActionListener action) {
-        try {
-            ImageIcon icon = new ImageIcon(iconPath);
-            JButton button = new JButton(text, icon) {
-                @Override
-                protected void paintComponent(Graphics g) {
-                    super.paintComponent(g);
-                    Graphics2D g2 = (Graphics2D) g;
-                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                    g2.setColor(getBackground());
-                    g2.fillRoundRect(0, 0, getWidth(), getHeight(), 20, 20);
-                    super.paintComponent(g);
-                }
-
-                @Override
-                protected void paintBorder(Graphics g) {
-                    Graphics2D g2 = (Graphics2D) g;
-                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                    g2.setColor(getBackground());
-                    g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 20, 20);
-                }
-            };
-            button.setFocusPainted(false);
-            button.setBackground(new Color(30, 100, 180));
-            button.setForeground(Color.WHITE);
-            button.setFont(new Font("Arial", Font.BOLD, 16));
-            button.setAlignmentX(Component.CENTER_ALIGNMENT);
-            button.setMaximumSize(new Dimension(180, 50));
-            button.setCursor(new Cursor(Cursor.HAND_CURSOR));
-            navigationPanel.add(Box.createRigidArea(new Dimension(0, 20)));
-            navigationPanel.add(button);
-            button.addActionListener(action);
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Ikon betöltése sikertelen: " + iconPath, e);
-        }
     }
 
     private void showScanPanel() {
@@ -113,7 +77,7 @@ public class PortaPage extends JFrame {
                     String cardNumber = cardField.getText().trim();
                     if (!cardNumber.isEmpty()) {
                         processCardScan(cardNumber, eventLogModel);
-                        cardField.setText(""); // clear input after processing
+                        cardField.setText("");
                     }
                 });
 
@@ -220,12 +184,20 @@ public class PortaPage extends JFrame {
 
 
     private void showProfile() {
-        // TODO: Profil megjelenítése portás felületen
+        contentPanel.removeAll();
+        JPanel profilePanel = ProfileUtil.buildProfilePanel(accessToken);
+        contentPanel.add(profilePanel, BorderLayout.CENTER);
+        contentPanel.revalidate();
+        contentPanel.repaint();
     }
 
     private void showEvents() {
-        // TODO: Eseménylista betöltése
+        contentPanel.removeAll();
+        contentPanel.add(EventsUtil.buildEventsPanel(accessToken), BorderLayout.CENTER);
+        contentPanel.revalidate();
+        contentPanel.repaint();
     }
+
 
     private void logout() {
         dispose();
