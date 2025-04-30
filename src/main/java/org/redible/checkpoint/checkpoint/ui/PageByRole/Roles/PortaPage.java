@@ -1,5 +1,6 @@
 package org.redible.checkpoint.checkpoint.ui.PageByRole.Roles;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.redible.checkpoint.checkpoint.util.ApiUtil;
 
@@ -85,55 +86,138 @@ public class PortaPage extends JFrame {
         titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
         contentPanel.add(titleLabel, BorderLayout.NORTH);
 
-        JPanel inputPanel = new JPanel();
-        inputPanel.setLayout(new FlowLayout());
-
+        JPanel inputPanel = new JPanel(new FlowLayout());
         JLabel label = new JLabel("Diákigazolvány szám:");
         JTextField cardField = new JTextField(20);
-        JButton submitButton = new JButton("Rögzítés");
-
         inputPanel.add(label);
         inputPanel.add(cardField);
-        inputPanel.add(submitButton);
-
         contentPanel.add(inputPanel, BorderLayout.CENTER);
 
-        submitButton.addActionListener(e -> {
-            String cardNumber = cardField.getText().trim();
-            if (cardNumber.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Kérlek add meg a diákigazolvány számot!", "Hiányzó adat", JOptionPane.WARNING_MESSAGE);
-                return;
+        DefaultListModel<String> eventLogModel = new DefaultListModel<>();
+        JList<String> eventList = new JList<>(eventLogModel);
+        eventList.setFont(new Font("Monospaced", Font.PLAIN, 14));
+        JScrollPane scrollPane = new JScrollPane(eventList);
+        scrollPane.setPreferredSize(new Dimension(contentPanel.getWidth(), 200));
+        contentPanel.add(scrollPane, BorderLayout.SOUTH);
+
+        final Timer[] debounceTimer = {null};
+        final int idleThreshold = 300;
+
+        cardField.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+            private void restartDebounce() {
+                if (debounceTimer[0] != null) {
+                    debounceTimer[0].stop();
+                }
+
+                debounceTimer[0] = new Timer(idleThreshold, e -> {
+                    String cardNumber = cardField.getText().trim();
+                    if (!cardNumber.isEmpty()) {
+                        processCardScan(cardNumber, eventLogModel);
+                        cardField.setText(""); // clear input after processing
+                    }
+                });
+
+                debounceTimer[0].setRepeats(false);
+                debounceTimer[0].start();
             }
 
-            new Thread(() -> {
-                try {
-                    String userId = ApiUtil.extractUserIdFromToken(accessToken);
+            public void insertUpdate(javax.swing.event.DocumentEvent e) {
+                restartDebounce();
+            }
 
-                    JSONObject payload = new JSONObject();
-                    payload.put("studentCardNumber", cardNumber);
-                    payload.put("recordedByPortaId", Integer.parseInt(userId));
+            public void removeUpdate(javax.swing.event.DocumentEvent e) {
+                restartDebounce();
+            }
 
-                    String response = ApiUtil.makeApiCall("http://localhost:3000/events/register", "POST", payload.toString(), accessToken);
-
-                    JSONObject json = new JSONObject(response);
-                    String status = json.optString("status", "ismeretlen");
-                    String message = json.optString("message", "Nincs visszajelzés");
-
-                    SwingUtilities.invokeLater(() ->
-                            JOptionPane.showMessageDialog(this, message + " (" + status + ")", "Siker", JOptionPane.INFORMATION_MESSAGE)
-                    );
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                    SwingUtilities.invokeLater(() ->
-                            JOptionPane.showMessageDialog(this, "Hiba történt a rögzítés során: " + ex.getMessage(), "Hiba", JOptionPane.ERROR_MESSAGE)
-                    );
-                }
-            }).start();
+            public void changedUpdate(javax.swing.event.DocumentEvent e) {
+                restartDebounce();
+            }
         });
 
         contentPanel.revalidate();
         contentPanel.repaint();
     }
+
+    private void processCardScan(String cardNumber, DefaultListModel<String> eventLogModel) {
+        new Thread(() -> {
+            try {
+                String userId = ApiUtil.extractUserIdFromToken(accessToken);
+
+                org.json.JSONObject payload = new org.json.JSONObject();
+                payload.put("studentCardNumber", cardNumber);
+                payload.put("recordedByPortaId", Integer.parseInt(userId));
+
+                String response = ApiUtil.makeApiCall(
+                        "http://localhost:3000/events/register",
+                        "POST",
+                        payload.toString(),
+                        accessToken
+                );
+
+                org.json.JSONObject json = new org.json.JSONObject(response);
+                String status = json.optString("status", "ismeretlen");
+                String message = json.optString("message", "Nincs visszajelzés");
+
+                String timestamp = java.time.LocalDateTime.now().toString().replace("T", " ").substring(0, 19);
+                String logEntry = String.format("[%s] %s → %s", timestamp, cardNumber, status.replace("_", " ").toUpperCase());
+
+                SwingUtilities.invokeLater(() -> {
+                    eventLogModel.addElement(logEntry);
+                    fetchSmokingStatuses(eventLogModel);
+                });
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                SwingUtilities.invokeLater(() -> {
+                    JOptionPane.showMessageDialog(this, "Hiba történt a rögzítés során: " + ex.getMessage(), "Hiba", JOptionPane.ERROR_MESSAGE);
+                });
+            }
+        }).start();
+    }
+
+    private void fetchSmokingStatuses(DefaultListModel<String> eventLogModel) {
+        new Thread(() -> {
+            try {
+                String response = ApiUtil.makeApiCall(
+                        "http://localhost:3000/events/smoking-statuses",
+                        "GET",
+                        null,
+                        accessToken
+                );
+
+                JSONArray statuses = new JSONArray(response);
+                StringBuilder statusSummary = new StringBuilder();
+                statusSummary.append("--- Napi dohányzási állapotok ---");
+
+                for (int i = 0; i < statuses.length(); i++) {
+                    JSONObject obj = statuses.getJSONObject(i);
+                    String name = obj.getString("name");
+                    String card = obj.getString("studentCardNumber");
+                    double minutes = obj.getDouble("totalMinutes");
+                    String status = obj.getString("status");
+
+                    String statusLine = String.format("%s (%s) – %.0f perc – %s",
+                            name, card, minutes,
+                            switch (status) {
+                                case "overlimit" -> "❌ TÚLLÉPÉS";
+                                case "ok" -> "✅ OK";
+                                default -> "⚠ ISMERETLEN";
+                            });
+
+                    statusSummary.append("\n").append(statusLine);
+                }
+
+                SwingUtilities.invokeLater(() -> {
+                    eventLogModel.addElement(statusSummary.toString());
+                });
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }).start();
+    }
+
+
+
 
     private void showProfile() {
         // TODO: Profil megjelenítése portás felületen
