@@ -1,6 +1,7 @@
 package org.redible.checkpoint.checkpoint.ui.PageByRole.Roles;
 
 import org.redible.checkpoint.checkpoint.ui.NavigationUI;
+import org.redible.checkpoint.checkpoint.ui.UIUtil;
 import org.redible.checkpoint.checkpoint.ui.scanner.ScanPanelBehavior;
 import org.redible.checkpoint.checkpoint.ui.scanner.ScanPanelBuilder;
 import org.redible.checkpoint.checkpoint.util.EventsUtil;
@@ -26,6 +27,7 @@ public class PortaPage extends JFrame {
                 e -> showProfile(),
                 e -> showEvents(),
                 e -> showScanPanel(),
+                e -> showSettings(),
                 e -> logout()
         );
         add(navigationPanel, BorderLayout.WEST);
@@ -65,6 +67,10 @@ public class PortaPage extends JFrame {
         contentPanel.add(EventsUtil.buildEventsPanel(accessToken), BorderLayout.CENTER);
         contentPanel.revalidate();
         contentPanel.repaint();
+    }
+
+    private void showSettings() {
+        UIUtil.showSettings(contentPanel, this);
     }
 
     private void logout() {

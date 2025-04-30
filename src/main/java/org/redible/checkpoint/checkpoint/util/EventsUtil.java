@@ -6,12 +6,11 @@ import org.json.JSONObject;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
 public class EventsUtil {
+
     public static JPanel buildEventsPanel(String accessToken) {
         JPanel panel = new JPanel(new BorderLayout());
 
@@ -23,14 +22,20 @@ public class EventsUtil {
         JScrollPane scrollPane = new JScrollPane(table);
         panel.add(scrollPane, BorderLayout.CENTER);
 
+        loadEvents(table, null, accessToken);
+
+        return panel;
+    }
+
+    public static void loadEvents(JTable table, String filter, String accessToken) {
         new Thread(() -> {
             try {
-                String response = ApiUtil.makeApiCall("http://localhost:3000/events", "GET", null, accessToken);
-                JSONArray array = new JSONArray(response);
-                List<String[]> data = new ArrayList<>();
+                String response = fetchEventsFromApi(filter, accessToken);
 
-                for (int i = 0; i < array.length(); i++) {
-                    JSONObject event = array.getJSONObject(i);
+                JSONArray jsonArray = new JSONArray(response);
+                List<String[]> data = new ArrayList<>();
+                for (int i = 0; i < jsonArray.length(); i++) {
+                    JSONObject event = jsonArray.getJSONObject(i);
                     String id = String.valueOf(event.getInt("id"));
                     String name = event.optString("name", "Ismeretlen");
                     String timestamp = event.getString("timestamp").replace("T", " ").substring(0, 16);
@@ -48,7 +53,14 @@ public class EventsUtil {
                 );
             }
         }).start();
+    }
 
-        return panel;
+    private static String fetchEventsFromApi(String filter, String accessToken) throws Exception {
+        String apiUrl = "http://localhost:3000/events";
+        if (filter != null) {
+            apiUrl += "?filter=" + filter;
+        }
+
+        return ApiUtil.makeApiCall(apiUrl, "GET", null, accessToken);
     }
 }

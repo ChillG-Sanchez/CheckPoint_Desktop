@@ -17,4 +17,6 @@ module org.redible.checkpoint.checkpoint {
     exports org.redible.checkpoint.checkpoint;
     exports org.redible.checkpoint.checkpoint.ui;
     opens org.redible.checkpoint.checkpoint.ui to javafx.fxml;
+    exports org.redible.checkpoint.checkpoint.ui.scanner;
+    opens org.redible.checkpoint.checkpoint.ui.scanner to javafx.fxml;
 }

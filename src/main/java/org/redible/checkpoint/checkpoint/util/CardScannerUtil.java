@@ -6,6 +6,7 @@ import javax.swing.*;
 import java.time.LocalDateTime;
 
 public class CardScannerUtil {
+
     public static void processCardScan(String cardNumber, String accessToken, DefaultListModel<String> eventLogModel) {
         new Thread(() -> {
             try {
@@ -22,16 +23,18 @@ public class CardScannerUtil {
                         accessToken
                 );
 
-                JSONObject json = new JSONObject(response);
-                String status = json.optString("status", "ismeretlen");
-                String message = json.optString("message", "Nincs visszajelzés");
+                JSONObject jsonResponse = new JSONObject(response);
+                String status = jsonResponse.optString("status", "ismeretlen");
+                String message = jsonResponse.optString("message", "Nincs visszajelzés");
 
                 String timestamp = LocalDateTime.now().toString().replace("T", " ").substring(0, 19);
                 String logEntry = String.format("[%s] %s → %s", timestamp, cardNumber, status.replace("_", " ").toUpperCase());
 
                 SwingUtilities.invokeLater(() -> {
                     eventLogModel.addElement(logEntry);
-                    SmokingStatusUtil.fetchSmokingStatuses(eventLogModel, accessToken);
+                    if ("not_found".equals(status)) {
+                        eventLogModel.addElement("Ez az azonosító nem szerepel a nyilvántartásban.");
+                    }
                 });
             } catch (Exception ex) {
                 ex.printStackTrace();

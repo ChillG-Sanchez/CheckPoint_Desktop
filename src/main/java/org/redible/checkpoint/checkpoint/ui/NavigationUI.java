@@ -44,7 +44,11 @@ public class NavigationUI {
         }
     }
 
-    public static JPanel createPortaSidebar(ActionListener onProfile, ActionListener onEvents, ActionListener onScan, ActionListener onLogout) {
+    public static JPanel createPortaSidebar(ActionListener onProfile,
+                                            ActionListener onEvents,
+                                            ActionListener onScan,
+                                            ActionListener onSettings,
+                                            ActionListener onLogout ) {
         JPanel navPanel = new JPanel();
         navPanel.setLayout(new BoxLayout(navPanel, BoxLayout.Y_AXIS));
         navPanel.setBackground(new Color(70, 130, 180));
@@ -53,9 +57,27 @@ public class NavigationUI {
         addStyledNavButton(navPanel, "Profil", "/icons/profile-svgrepo-com.svg", onProfile);
         addStyledNavButton(navPanel, "Események", "/icons/list-svgrepo-com.svg", onEvents);
         addStyledNavButton(navPanel, "Kártyabeolvasás", "/icons/barcode-svgrepo-com.svg", onScan);
+        addStyledNavButton(navPanel, "Beállítások", "/icons/settings-svgrepo-com.svg", onSettings);
         addStyledNavButton(navPanel, "Kilépés", "/icons/logout-multimedia-ui-svgrepo-com.svg", onLogout);
 
         return navPanel;
     }
 
+    public static JPanel createAdminSidebar(ActionListener showProfile, ActionListener showSearch,
+                                            ActionListener showUsersManagement, ActionListener showSettings,
+                                            ActionListener showEvents, ActionListener logout) {
+        JPanel panel = new JPanel();
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+        panel.setBackground(new Color(70, 130, 180));
+        panel.setPreferredSize(new Dimension(200, 600));
+
+        addStyledNavButton(panel, "Profil", "/icons/profile-svgrepo-com.svg", showProfile);
+        addStyledNavButton(panel, "Keresés", "/icons/search-svgrepo-com.svg", showSearch);
+        addStyledNavButton(panel, "Felhasználók", "/icons/user-pen-alt-svgrepo-com.svg", showUsersManagement);
+        addStyledNavButton(panel, "Beállítások", "/icons/settings-svgrepo-com.svg", showSettings);
+        addStyledNavButton(panel, "Események", "/icons/list-svgrepo-com.svg", showEvents);
+        addStyledNavButton(panel, "Kilépés", "/icons/logout-multimedia-ui-svgrepo-com.svg", logout);
+
+        return panel;
+    }
 }

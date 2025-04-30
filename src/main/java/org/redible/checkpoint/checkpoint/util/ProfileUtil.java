@@ -3,11 +3,11 @@ package org.redible.checkpoint.checkpoint.util;
 import org.json.JSONObject;
 
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
 import java.awt.*;
 
 public class ProfileUtil {
 
-    // Metódus a profil adatainak megjelenítéséhez
     public static JPanel buildProfilePanel(String accessToken) {
         JPanel profilePanel = new JPanel();
         profilePanel.setLayout(new BorderLayout());
@@ -48,7 +48,6 @@ public class ProfileUtil {
         return profilePanel;
     }
 
-    // Metódus a profil adatainak betöltéséhez
     private static void loadProfileData(String accessToken, JTextField nameField, JTextField emailField, JTextField roleField) {
         new Thread(() -> {
             try {
@@ -73,7 +72,6 @@ public class ProfileUtil {
         }).start();
     }
 
-    // Metódus a profil szerkesztéséhez
     public static void showEditProfilePanel(String currentName, String currentEmail, String accessToken, JPanel contentPanel) {
         contentPanel.removeAll();
         JLabel titleLabel = new JLabel("Profil szerkesztése");
@@ -123,7 +121,6 @@ public class ProfileUtil {
                         try {
                             JSONObject jsonResponse = new JSONObject(response);
                             JOptionPane.showMessageDialog(null, "Adatok sikeresen frissítve!", "Siker", JOptionPane.INFORMATION_MESSAGE);
-                            // reload profile
                             loadProfileData(accessToken, nameField, emailField, new JTextField());
                         } catch (Exception ex) {
                             JOptionPane.showMessageDialog(null, "Hiba történt a válasz feldolgozása során!", "Hiba", JOptionPane.ERROR_MESSAGE);
