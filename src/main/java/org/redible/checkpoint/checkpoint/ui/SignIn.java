@@ -3,6 +3,7 @@ package org.redible.checkpoint.checkpoint.ui;
 import com.formdev.flatlaf.FlatLightLaf;
 import org.redible.checkpoint.checkpoint.auth.AuthService;
 import org.redible.checkpoint.checkpoint.ui.PageByRole.Roles.AdminPage;
+import org.redible.checkpoint.checkpoint.ui.PageByRole.Roles.PortaPage;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -151,12 +152,45 @@ public class SignIn extends JFrame {
                 authService.authenticateUser(email, password);
                 String accessToken = authService.getAccessToken();
 
-                new AdminPage(accessToken).setVisible(true);
+                String role = extractRoleFromToken(accessToken);
+
+                switch (role.toUpperCase()) {
+                    case "ADMIN":
+                        new AdminPage(accessToken).setVisible(true);
+                        break;
+                    case "PORTA":
+                        new PortaPage(accessToken).setVisible(true);
+                        break;
+                    // további szerepkörök, ha szükséges:
+                    // case "TEACHER":
+                    // case "STUDENT":
+                    default:
+                        JOptionPane.showMessageDialog(null, "Ismeretlen szerepkör: " + role, "Hiba", JOptionPane.ERROR_MESSAGE);
+                        return;
+                }
+
                 dispose();
             } catch (Exception ex) {
                 ex.printStackTrace();
                 JOptionPane.showMessageDialog(null, "Hiba történt a bejelentkezés során!", "Hiba", JOptionPane.ERROR_MESSAGE);
             }
         });
+
     }
+
+    private String extractRoleFromToken(String token) {
+        try {
+            String[] parts = token.split("\\.");
+            if (parts.length != 3) {
+                throw new RuntimeException("Az accessToken nem megfelelő formátumú.");
+            }
+            String payload = new String(java.util.Base64.getUrlDecoder().decode(parts[1]));
+            org.json.JSONObject jsonPayload = new org.json.JSONObject(payload);
+
+            return jsonPayload.getString("role");
+        } catch (Exception e) {
+            throw new RuntimeException("Hiba a role kiolvasása közben: " + e.getMessage(), e);
+        }
+    }
+
 }
